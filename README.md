@@ -84,6 +84,7 @@ other. The notes in `backpacks/` draft them.
 blender --background --python stilt/build_stilt.py
 blender --background stilt/stilt.blend --python stilt/render_stilt.py -- 3q cu check
 blender --background --python stilt/verify_glb.py
+blender --background --disable-autoexec --python-exit-code 1 --python stilt/verify_glb_motion.py
 ```
 
 The first line rebuilds `stilt.blend` and `stilt.glb` from nothing, including the texture bake (about 80 s; add
