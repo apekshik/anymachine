@@ -1,7 +1,8 @@
 """Check renders, close-ups, clash check and video frames for the Stilt-walker.
 Run:  blender.exe --background stilt.blend --python render_stilt.py -- [views...] [--engine cycles] [--samples N] [--frames DIR] [--step N] [--tag T]
 Stills:  front left rear right top 3q 3q_rear cu (the seven close-ups that match refs/closeup_*.png) poses
-Checks:  check (part-vs-part intersections over every action, compared with the rest pose)
+Checks:  check (fast, every sixth frame); check-strict (every frame, JSON)
+Pass Blender's --python-exit-code 1 before --python for strict failure status.
 Video frames (need --frames DIR):  walk reach head turntable assembly
 """
 import bpy, sys, os, json
@@ -10,6 +11,9 @@ from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from clash_check import emit_strict_report, scan_action
+
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 SAMPLES, FRAMES, ENGINE, STEP, TAG, RES = 64, None, 'EEVEE', 1, '', None
 views = []
@@ -148,21 +152,24 @@ def overlaps(frame):
     return out
 
 
-def check():
+def check(*, strict=False):
     set_action(None)
     rest = overlaps(1)
     print('REST OVERLAPS (joints by design):', len(rest))
+    actions = {}
     for name, d in INFO['actions'].items():
         set_action(name)
-        worst = {}
-        for f in range(1, d['frames'] + 1, 6):
-            for k, n in overlaps(f).items():
-                if k not in rest or n > rest[k] * 3 + 60:
-                    if n > worst.get(k, (0, 0))[0]:
-                        worst[k] = (n, f)
-        print('ACTION', name, 'NEW OVERLAPS:', len(worst))
-        for k, (n, f) in sorted(worst.items(), key=lambda q: -q[1][0])[:60]:
-            print('  CLASH', k[0], 'x', k[1], 'tris', n, 'frame', f)
+        result = scan_action(overlaps, rest, d['frames'], step=1 if strict else 6)
+        if strict:
+            actions[name] = result
+            continue
+        clashes = result['clashes']
+        print('ACTION', name, 'NEW OVERLAPS:', len(clashes))
+        for clash in sorted(clashes, key=lambda item: -item['overlap_count'])[:60]:
+            a, b = clash['parts']
+            print('  CLASH', a, 'x', b, 'tris', clash['overlap_count'], 'frame', clash['worst_frame'])
+    if strict:
+        emit_strict_report(actions)
 
 
 # ---------------------------------------------------------------------------------------------- video frames
@@ -296,6 +303,9 @@ for v in list(views):
 if 'check' in views:
     check()
     views.remove('check')
+if 'check-strict' in views:
+    check(strict=True)
+    views.remove('check-strict')
 
 # ---------------------------------------------------------------------------------------------- stills
 S_F, S_L = 30.0 / 1010.0, 30.0 / 950.0

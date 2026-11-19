@@ -90,6 +90,17 @@ The first line rebuilds `stilt.blend` and `stilt.glb` from nothing, including th
 `--no-bake` to skip it). `stilt/edit.ps1` and `stilt/video.ps1` regenerate the references from the `jobs_*.json`
 prompt files and need `FAL_KEY`.
 
+For a quick Stilt clash preview, use the `check` view (every sixth frame).
+For a strict check with a JSON summary line and a nonzero exit on unexpected overlaps:
+
+```bash
+blender --background stilt/stilt.blend --python-exit-code 1 --python stilt/render_stilt.py -- check-strict
+```
+
+Strict mode checks every integer frame, including the last; it uses the same
+rest-pose overlap heuristic and same-group exclusions as the fast check.
+It does not detect collisions between frames.
+
 **Hard-surface objects** (Blender 5.2). Each object is one script; `--nobake` builds the geometry in seconds:
 
 ```
