@@ -43,9 +43,10 @@ bake("open_param", [(1 + i, i / 24) for i in range(25)])  # 24 fps: t in seconds
 pb.rotation_quaternion = (1, 0, 0, 0)
 # textures <= 2K (normalize.py rule); repack only what was scaled
 for img in bpy.data.images:
-    if img.size[0] > 2048:
-        f_ = 2048 / max(img.size)
-        img.scale(int(img.size[0] * f_), int(img.size[1] * f_))
+    width, height = img.size
+    long_edge = max(width, height)
+    if long_edge > 2048:
+        img.scale(max(1, width * 2048 // long_edge), max(1, height * 2048 // long_edge))
         img.pack()
 for o in bpy.data.objects:
     o.select_set(o.name in ("laptop_rig", "base", "lid", "screen"))
