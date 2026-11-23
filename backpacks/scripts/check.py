@@ -31,8 +31,14 @@ chk = spec["check"]
 def group_mask(ob, groups, thresh=0.5):
     if not groups:
         return None
-    gi = {ob.vertex_groups[g].index for g in groups if g in ob.vertex_groups}
-    return [sum(g.weight for g in v.groups if g.group in gi) > thresh for v in ob.data.vertices]
+    missing = [name for name in groups if name not in ob.vertex_groups]
+    if missing:
+        raise ValueError(f"{ob.name}: unknown vertex groups for collision check: {', '.join(missing)}")
+    indices = {ob.vertex_groups[name].index for name in groups}
+    mask = [sum(g.weight for g in v.groups if g.group in indices) > thresh for v in ob.data.vertices]
+    if not any(mask):
+        raise ValueError(f"{ob.name}: collision check groups select no vertices: {', '.join(groups)}")
+    return mask
 
 
 def evaluated(ob):
