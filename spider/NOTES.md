@@ -83,6 +83,10 @@ Scripts in `scripts/`:
 
 ## Check results (`out/check.json`, `out/verify_glb.json`)
 
+The half-frame walk and IK-only probes measure foot motion. Their geometry fields are
+`null` because those probes skip collision and clearance checks. The summary takes
+geometry measurements from the full-motion and joint-sweep checks.
+
 | Check | Result |
 |---|---|
 | Joint sweeps: all 24 joints through their full limit range in 2.5° steps (984 poses), against all 26 parts | **0 triangle overlaps.** Min non-adjacent clearance 2.81 mm. Coaxial half-barrel gap 1.50 mm everywhere. |

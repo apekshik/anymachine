@@ -255,7 +255,11 @@ def run_motion(motion, ik=False, geometry=True, sub=1):
     r.update({"stance_runs": n_runs, "max_foot_slip_mm": round(slip * 1000, 4), "max_foot_slip_xy_mm": round(slip_xy * 1000, 4)})
     for k in ("min_clearance_mm", "min_adjacent_gap_mm", "min_part_z_mm", "min_foot_z_mm", "max_target_err_mm", "max_track_err_deg"):
         r[k] = round(r[k], 3)
-    r["any_overlap"] = bool(r["overlap_frames"])
+    if not geometry:
+        # These passes only measure foot motion, so no geometry verdict exists.
+        for key in ("overlap_frames", "min_clearance_mm", "min_adjacent_gap_mm", "min_part_z_mm"):
+            r[key] = None
+    r["any_overlap"] = bool(r["overlap_frames"]) if geometry else None
     return r
 
 
@@ -270,16 +274,17 @@ print("IK", json.dumps({k: v for k, v in res["ik_mode"].items() if k != "overlap
 arm["ik_blend"] = 0.0
 arm.animation_data.action = bpy.data.actions["walk_demo"]
 
+geometry_motions = [motion for motion in res["motions"].values() if motion["overlap_frames"] is not None]
 res["summary"] = {
     "overlaps_sweeps": len(res["sweeps"]["joints_with_overlap"]),
-    "overlaps_motion_frames": sum(len(v["overlap_frames"]) for k, v in res["motions"].items() if "overlap_frames" in v),
-    "min_clearance_mm": min([res["sweeps"]["min_clearance_mm"]] + [v["min_clearance_mm"] for v in res["motions"].values()]),
-    "min_adjacent_gap_mm": min([res["sweeps"]["min_adjacent_gap_mm"]] + [v["min_adjacent_gap_mm"] for v in res["motions"].values()]),
+    "overlaps_motion_frames": sum(len(v["overlap_frames"]) for v in geometry_motions),
+    "min_clearance_mm": min([res["sweeps"]["min_clearance_mm"]] + [v["min_clearance_mm"] for v in geometry_motions]),
+    "min_adjacent_gap_mm": min([res["sweeps"]["min_adjacent_gap_mm"]] + [v["min_adjacent_gap_mm"] for v in geometry_motions]),
     "max_foot_slip_mm_frames": res["motions"]["walk_demo"]["max_foot_slip_mm"],
     "max_foot_slip_mm_halfframes": res["motions"]["walk_halfframes"]["max_foot_slip_mm"],
     "limits_clamp_err_deg": res["sweeps"]["max_clamp_error_deg"],
     "max_tracking_error_deg": max(res["sweeps"]["max_tracking_error_deg"], *[v["max_track_err_deg"] for v in res["motions"].values()]),
-    "min_ground_clearance_parts_mm": min(v["min_part_z_mm"] for v in res["motions"].values() if v["min_part_z_mm"] < 1e8),
+    "min_ground_clearance_parts_mm": min(v["min_part_z_mm"] for v in geometry_motions),
     "min_foot_z_mm": min(v["min_foot_z_mm"] for v in res["motions"].values()),
     "ik_mode_max_foot_err_mm": res["ik_mode"]["max_target_err_mm"],
 }

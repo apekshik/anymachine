@@ -348,34 +348,34 @@
   },
   "walk_halfframes": {
    "frames": 25,
-   "overlap_frames": [],
-   "min_clearance_mm": 1000000000.0,
+   "overlap_frames": null,
+   "min_clearance_mm": null,
    "worst_pair": null,
-   "min_adjacent_gap_mm": 1000000000.0,
-   "min_part_z_mm": 1000000000.0,
+   "min_adjacent_gap_mm": null,
+   "min_part_z_mm": null,
    "min_foot_z_mm": -0.716,
    "max_target_err_mm": 1.246,
    "max_track_err_deg": 0.0,
    "stance_runs": 16,
    "max_foot_slip_mm": 0.7482,
    "max_foot_slip_xy_mm": 0.2153,
-   "any_overlap": false
+   "any_overlap": null
   }
  },
  "ik_mode": {
   "frames": 97,
-  "overlap_frames": [],
-  "min_clearance_mm": 1000000000.0,
+  "overlap_frames": null,
+  "min_clearance_mm": null,
   "worst_pair": null,
-  "min_adjacent_gap_mm": 1000000000.0,
-  "min_part_z_mm": 1000000000.0,
+  "min_adjacent_gap_mm": null,
+  "min_part_z_mm": null,
   "min_foot_z_mm": -0.0,
   "max_target_err_mm": 0.048,
   "max_track_err_deg": 0.0,
   "stance_runs": 40,
   "max_foot_slip_mm": 0.0002,
   "max_foot_slip_xy_mm": 0.0002,
-  "any_overlap": false
+  "any_overlap": null
  },
  "summary": {
   "overlaps_sweeps": 0,
