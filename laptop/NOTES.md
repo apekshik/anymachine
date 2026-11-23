@@ -1,6 +1,11 @@
 # AnyMachine: experiment 1, laptop with one working lid hinge
 
-Date: 2026-11-03. Everything runs headless with Blender 5.0. To rebuild from the cached generations, run `bash run_all.sh`.
+Date: 2026-11-03. Everything runs headless with Blender 5.0. To rebuild from a checkout:
+
+1. Put the cached Tripo laptop mesh at `laptop/gen/tripo/model.glb`. The generated mesh is not tracked here. The screen image is included at `laptop/refs/screen_ui_0.png`.
+2. Install Blender 5.0 and FFmpeg with the `libx264` encoder, then run `bash laptop/run_all.sh` from the repository root. Set `BLENDER` or `FFMPEG` to use executables outside of `PATH`.
+
+The runner uses Cycles on the CPU by default. To render with a configured GPU, set `BLENDER_GPU_SCRIPT` to a Blender Python setup script that enables the device.
 
 ## What came out
 

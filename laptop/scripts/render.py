@@ -1,7 +1,7 @@
 """Render the rigged laptop.
 
 blender -b --python anyscene/builder/blender_gpu.py --python render.py -- --blend out/laptop.blend --out out/render \
-    (--stills 0,90,135 | --anim) [--engine CYCLES|EEVEE] [--res 1600 900] [--samples 64] [--cam persp|side|front]
+    (--stills 0,90,135 | --anim) [--engine CYCLES|EEVEE] [--device CPU|GPU] [--resx 1600 --resy 900] [--samples 64] [--cam persp|side|front|hinge]
 """
 import bpy, sys, os, math
 from mathutils import Vector
@@ -15,6 +15,7 @@ def opt(k, d=None, cast=str):
 
 BLEND, OUT = opt("--blend"), os.path.abspath(opt("--out"))
 ENGINE = opt("--engine", "CYCLES")
+DEVICE = opt("--device", "GPU")
 SAMPLES = opt("--samples", 64, int)
 CAM = opt("--cam", "persp")
 os.makedirs(OUT, exist_ok=True)
@@ -28,7 +29,7 @@ sc.render.engine = "CYCLES" if ENGINE == "CYCLES" else "BLENDER_EEVEE"
 if ENGINE == "CYCLES":
     sc.cycles.samples = SAMPLES
     sc.cycles.use_denoising = True
-    sc.cycles.device = "GPU"
+    sc.cycles.device = DEVICE
 sc.view_settings.view_transform = "AgX"
 sc.view_settings.look = "AgX - Medium High Contrast"
 
