@@ -11,25 +11,32 @@ argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 N = int(argv[argv.index('--frames') + 1]) if '--frames' in argv else 120
 DO = [a for a in argv if a in ('still', 'turn', 'fbx')] or ['still', 'turn', 'fbx']
 GLB = os.path.join(HERE, 'stilt.glb')
+FBX = os.path.join(HERE, 'stilt.fbx')
 OUTD = os.path.join(HERE, 'renders')
 
-with open(GLB, 'rb') as fh:
-    fh.read(12)
-    ln, _ = struct.unpack('<II', fh.read(8))
-    g = json.loads(fh.read(ln))
-print('GLB images', len(g.get('images', [])), [i.get('mimeType') for i in g.get('images', [])], 'textures', len(g.get('textures', [])),
-      'materials', len(g['materials']), 'meshes', len(g['meshes']), 'joints', len(g['skins'][0]['joints']),
-      'animations', [(a.get('name'), len(a['channels'])) for a in g.get('animations', [])])
-for m in g['materials']:
-    p = m.get('pbrMetallicRoughness', {})
-    print('GLB mat %-22s tex=%s orm=%s normal=%s emissive=%s x%s' % (
-        m['name'], 'baseColorTexture' in p, 'metallicRoughnessTexture' in p, 'normalTexture' in m,
-        [round(v, 2) for v in m.get('emissiveFactor', [0, 0, 0])],
-        m.get('extensions', {}).get('KHR_materials_emissive_strength', {}).get('emissiveStrength', 1)))
-used = {t.get('texCoord', 0) for m in g['materials'] for t in
-        [m.get('pbrMetallicRoughness', {}).get('baseColorTexture'), m.get('normalTexture')] if t}
-print('GLB textures read texCoord', sorted(used))
+if 'fbx' in DO and not os.path.isfile(FBX):
+    if 'fbx' in argv:
+        raise FileNotFoundError(f'FBX verification requires {FBX}; build Stilt to generate it.')
+    print(f'SKIPPED FBX: {FBX} was not found.')
+    DO.remove('fbx')
 
+if 'still' in DO or 'turn' in DO:
+    with open(GLB, 'rb') as fh:
+        fh.read(12)
+        ln, _ = struct.unpack('<II', fh.read(8))
+        g = json.loads(fh.read(ln))
+    print('GLB images', len(g.get('images', [])), [i.get('mimeType') for i in g.get('images', [])], 'textures', len(g.get('textures', [])),
+          'materials', len(g['materials']), 'meshes', len(g['meshes']), 'joints', len(g['skins'][0]['joints']),
+          'animations', [(a.get('name'), len(a['channels'])) for a in g.get('animations', [])])
+    for m in g['materials']:
+        p = m.get('pbrMetallicRoughness', {})
+        print('GLB mat %-22s tex=%s orm=%s normal=%s emissive=%s x%s' % (
+            m['name'], 'baseColorTexture' in p, 'metallicRoughnessTexture' in p, 'normalTexture' in m,
+            [round(v, 2) for v in m.get('emissiveFactor', [0, 0, 0])],
+            m.get('extensions', {}).get('KHR_materials_emissive_strength', {}).get('emissiveStrength', 1)))
+    used = {t.get('texCoord', 0) for m in g['materials'] for t in
+            [m.get('pbrMetallicRoughness', {}).get('baseColorTexture'), m.get('normalTexture')] if t}
+    print('GLB textures read texCoord', sorted(used))
 
 def studio(scn):
     w = bpy.data.worlds.new('World')
@@ -118,9 +125,9 @@ if 'still' in DO or 'turn' in DO:
             look((r * cos(a), r * sin(a), 9 + 13 * k), (0.5 * k, 0, 14.8 + 7.5 * k), 50)
             scn.render.filepath = os.path.join(fd, '%04d.png' % f)
             bpy.ops.render.render(write_still=True)
-if 'fbx' in DO and os.path.exists(os.path.join(HERE, 'stilt.fbx')):
+if 'fbx' in DO:
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.fbx(filepath=os.path.join(HERE, 'stilt.fbx'))
+    bpy.ops.import_scene.fbx(filepath=FBX)
     arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]
     meshes = [o for o in bpy.data.objects if o.type == 'MESH']
     lo = Vector((1e9, 1e9, 1e9))
