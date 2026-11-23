@@ -115,7 +115,9 @@ def leg_ik(P, L, F):
     psi = math.atan2(dw, du) - math.atan2(-c, rho)
     x, zz = rho - P["L1"], d[2]
     D = math.hypot(x, zz)
-    reach_ok = abs(P["L2"] - P["L3"]) + 1e-4 <= D <= P["L2"] + P["L3"] - 1e-4
+    # A foot centre closer to the yaw axis than its slab offset cannot reach that target.
+    # Keep the projected pose finite so callers can still report the failed target.
+    reach_ok = r2 >= 0 and abs(P["L2"] - P["L3"]) + 1e-4 <= D <= P["L2"] + P["L3"] - 1e-4
     D = min(max(D, abs(P["L2"] - P["L3"]) + 1e-4), P["L2"] + P["L3"] - 1e-4)
     g = math.atan2(zz, x)
     b = math.acos(max(-1.0, min(1.0, (P["L2"] ** 2 + D * D - P["L3"] ** 2) / (2 * P["L2"] * D))))
