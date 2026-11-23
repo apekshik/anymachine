@@ -9,6 +9,7 @@ import bpy, sys, os, json
 from math import radians, sin, cos, pi
 from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
+from zlib import crc32
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -279,7 +280,7 @@ def anim_assembly():
 
     def fn(f):
         for o in PARTS:
-            fa = 8 + st[o.name] * SPAN + (hash(o.name) % 7)
+            fa = 8 + st[o.name] * SPAN + (crc32(o.name.encode('utf-8')) % 7)
             t = (f - fa) / FLY
             o.hide_render = t <= 0
             e = 1 - (1 - min(max(t, 0.0), 1.0)) ** 3
