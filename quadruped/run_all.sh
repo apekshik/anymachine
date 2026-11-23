@@ -2,12 +2,16 @@
 # AnyMachine experiment 3 (quadruped), end to end from the cached generation (refs/ + gen/meshy/model.glb):
 #   bash run_all.sh [render]
 # build -> check -> export -> verify GLB -> trot loop + stills (Cycles, GPU queue) -> sit/stand clip (Eevee) -> mp4/gif
-set -e
+set -eo pipefail
 FFMPEG_X264=$(uv run --python 3.13 --with imageio-ffmpeg python -I -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())" | tr -d '\r')  # pipeline ffmpeg lacks libx264
 source /c/Users/apek-anna/Developer/anyscene/pipeline/env.sh
 Q=C:/Users/apek-anna/Developer/anymachine/quadruped; S=$Q/scripts; O=$Q/out
 G=C:/Users/apek-anna/Developer/anyscene/builder/blender_gpu.py; GPU=/c/Users/apek-anna/Developer/anyscene/pipeline/gpu_run.sh
-B() { "$BLENDER" -b --factory-startup "$@" 2>&1 | grep -E "BUILT|SWEEP|RANDOM|ACTION|EXPORTED|VERIFY|GLB_OK|RENDERED|Error|Traceback" || true; }
+# Keep progress readable without masking Blender's exit status or requiring a marker.
+B() {
+  "$BLENDER" -b --factory-startup --python-exit-code 1 "$@" 2>&1 |
+    awk '/BUILT|SWEEP|RANDOM|ACTION|EXPORTED|VERIFY|GLB_OK|RENDERED|Error|Traceback/'
+}
 if [ "$1" != render ]; then  # `bash run_all.sh render` re-renders only
 B --python $S/build.py -- --glb $Q/gen/meshy/model.glb --out $O/quadruped.blend --length 0.70
 B --python $S/check.py -- --blend $O/quadruped.blend --out $O/check.json --random 300 | tee $O/check.log
@@ -16,14 +20,14 @@ B --python $S/verify_glb.py -- --glb $O/quadruped.glb --out $O/verify_glb.json
 fi
 rm -rf $O/anim $O/anim_sit $O/stills
 R="--python $G --python $S/render.py -- --blend $O/quadruped.blend"
-bash $GPU "$BLENDER" -b --factory-startup $R --out $O/anim --cam persp --action trot_forward --anim --track --samples 40 --resx 1280 --resy 720 --name trot | grep RENDERED
+bash "$GPU" "$BLENDER" -b --factory-startup --python-exit-code 1 $R --out $O/anim --cam persp --action trot_forward --anim --track --samples 40 --resx 1280 --resy 720 --name trot | grep RENDERED
 for a in "--cam persp --action trot_forward --frames 1,13 --track --samples 96 --resx 1600 --resy 900 --name persp" \
          "--cam persp --action sit --frames 49 --samples 96 --resx 1600 --resy 900 --name persp" \
          "--cam side --action trot --frames 1,5,10 --samples 64 --resx 1600 --resy 900 --name side" \
          "--cam side --action sit --frames 49 --samples 64 --resx 1600 --resy 900 --name side" \
          "--cam knee --action trot --frames 1,10 --samples 64 --resx 1200 --resy 900 --name knee" \
          "--cam knee --action sit --frames 49 --samples 64 --resx 1200 --resy 900 --name knee"; do
-  bash $GPU "$BLENDER" -b --factory-startup $R --out $O/stills $a | grep RENDERED
+  bash "$GPU" "$BLENDER" -b --factory-startup --python-exit-code 1 $R --out $O/stills $a | grep RENDERED
 done
 B --python $S/render.py -- --blend $O/quadruped.blend --out $O/anim_sit --cam persp --action sit --anim --engine EEVEE --resx 960 --resy 540 --name sit
 B --python $S/render.py -- --blend $O/quadruped.blend --out $O/anim_sit --cam persp --action stand --anim --engine EEVEE --resx 960 --resy 540 --name stand
