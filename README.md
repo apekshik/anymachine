@@ -87,8 +87,8 @@ blender --background --python stilt/verify_glb.py
 blender --background --disable-autoexec --python-exit-code 1 --python stilt/verify_glb_motion.py
 ```
 
-The first line rebuilds `stilt.blend` and `stilt.glb` from nothing, including the texture bake (about 80 s; add
-`--no-bake` to skip it). `stilt/edit.ps1` and `stilt/video.ps1` regenerate the references from the `jobs_*.json`
+The first line rebuilds `stilt.blend` and `stilt.glb`, including the texture bake (about 80 s). To skip
+the bake, run `blender --background --python stilt/build_stilt.py -- --no-bake`. `stilt/edit.ps1` and `stilt/video.ps1` regenerate the references from the `jobs_*.json`
 prompt files and need `FAL_KEY`.
 
 For a quick Stilt clash preview, use the `check` view (every sixth frame).
@@ -112,6 +112,19 @@ blender -b --factory-startup --python equipment/xmas_tree/build.py -- --size 512
 
 See [`hardsurface/NOTES.md`](hardsurface/NOTES.md) for what is and is not in the repo.
 
-**The others** (Blender 5.0). Each folder has a `run_all.sh` (`run_bag.sh` for the backpacks) that rebuilds
-everything from the cached generations in its `gen/` folder, headless. Generations, `.blend` files, GLBs and render
-frames are not in the repo; the demo GIFs, stills and `check.json` reports are.
+**Generated-mesh experiments** (Blender 5.0). A fresh checkout includes references, demo GIFs, stills and
+check reports. To rebuild a rig, supply the corresponding generated mesh. The cached source meshes and rebuilt
+`.blend` and GLB outputs for these experiments are not tracked.
+
+| Experiment | Cached source mesh path relative to the repository root |
+|---|---|
+| [Laptop](laptop/NOTES.md) | `laptop/gen/tripo/model.glb` |
+| [Quadruped](quadruped/NOTES.md) | `quadruped/gen/meshy/model.glb` |
+| [Spider](spider/NOTES.md) | `spider/gen/meshy/model.glb` |
+| [Daypack](backpacks/NOTES.md) | `backpacks/gen/daypack_meshy/model.glb` |
+| [Roll-top](backpacks/NOTES.md) | `backpacks/gen/rolltop_tripo/model.glb` |
+| [Rucksack](backpacks/NOTES.md) | `backpacks/gen/rucksack_tripo/model.glb` |
+
+The Blender scripts accept input and output paths after `--`. The shell runners automate multiple stages
+and may need local Blender, FFmpeg or rendering configuration. For the backpacks, build the initial scene
+with the matching `backpacks/scripts/build_<bag>.py` before running `run_bag.sh <bag>`.
