@@ -185,3 +185,23 @@ Hard edges carry a 6 to 20 mm chamfer and all parts have weighted custom normals
 - **Clean.** No moss, dirt, damage or decals: the dead one among the pylons is a material and set-dressing pass.
 - **Texel density is low for close shots** (a 30 m machine on two 4K maps). The bake carries tone, streaks and
   ambient occlusion; for close-ups in UE use tiling detail on `UV_Tile`.
+
+## Headless GLB motion verification
+
+`verify_glb_motion.py` loads the source rig and reimports the exported GLB into
+an empty scene using the source frame rate. It checks the imported clip names,
+baked frame ranges, bone names, and evaluated motion at every expected baked
+key, including the first and last, across all bones. Stilt
+exports every other frame, so an even source end frame is not expected to be
+present. The comparison uses world-space joint positions and deformation
+relative to the bind pose. Its thresholds are 2 mm for position differences
+and 0.0002 for individual linear transform elements. The JSON summary is
+printed on a single line; Blender's `--python-exit-code 1` makes failures
+machine-detectable. This is a sampled rig-motion check, not continuous
+validation of interpolation, materials or skin weights.
+
+From the repository root, run the procedural regression tests with:
+
+```sh
+blender --background --disable-autoexec --python-exit-code 1 --python stilt/tests/test_verify_glb_motion.py
+```
