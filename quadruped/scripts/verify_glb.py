@@ -30,12 +30,14 @@ rep = {"objects": len(bpy.data.objects), "meshes": sorted(o.name for o in bpy.da
 ad = arm.animation_data
 for t in list(ad.nla_tracks):
     t.mute = True
+missing_actions = []
 for name in ("trot", "trot_forward", "idle", "sit", "stand"):
     cands = [a for a in bpy.data.actions if a.name == name or (a.name.startswith(name + "_") and not
              (name == "trot" and a.name.startswith("trot_forward")))]
     act = cands[0] if cands else None
     if act is None:
         rep["per_action"][name] = "MISSING"
+        missing_actions.append(name)
         continue
     ad.action = act
     if getattr(ad, "action_slot", None) is None and len(getattr(act, "slots", [])):
@@ -55,4 +57,6 @@ for name in ("trot", "trot_forward", "idle", "sit", "stand"):
     rep["per_action"][name] = {"gltf_action": act.name, "frames": len(frames), "max_foot_err_mm": round(err * 1000, 3)}
     print("VERIFY", name, rep["per_action"][name], flush=True)
 json.dump(rep, open(OUT, "w"), indent=1)
+if missing_actions:
+    raise RuntimeError("Missing required GLB actions: " + ", ".join(missing_actions))
 print("GLB_OK", json.dumps({k: rep[k] for k in ("objects", "actions", "per_action")}), flush=True)
