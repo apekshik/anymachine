@@ -28,6 +28,8 @@ report = {"gen": GEN, "glb": GLB}
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=GLB)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+if not meshes:
+    raise ValueError("The input GLB contains no mesh objects")
 if GEN.startswith("tripo"):
     for o in bpy.context.scene.objects:
         o.rotation_mode = "QUATERNION"
@@ -51,9 +53,14 @@ me = gen.data
 if GEN.startswith("tripo"):
     me.transform(Matrix.Rotation(math.radians(-90), 4, "Z"))
 vs = [v.co for v in me.vertices]
+if not vs:
+    raise ValueError("The input GLB mesh has no vertices")
 lo = Vector([min(v[i] for v in vs) for i in range(3)])
 hi = Vector([max(v[i] for v in vs) for i in range(3)])
-s = WIDTH / (hi.x - lo.x)
+source_width = hi.x - lo.x
+if source_width <= 0:
+    raise ValueError("The input GLB has no width after orientation")
+s = WIDTH / source_width
 me.transform(Matrix.Diagonal((s, s, s, 1)) @ Matrix.Translation(-Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))))
 vs = [v.co.copy() for v in me.vertices]
 lo = Vector([min(v[i] for v in vs) for i in range(3)])
@@ -69,8 +76,12 @@ def pct(a, p):
 
 # deck: front half of the footprint; its 98th-percentile height is the top of the keyboard deck
 front = [v for v in vs if v.y < lo.y + 0.55 * (hi.y - lo.y) and abs(v.x) < 0.12]
+if not front:
+    raise ValueError("Could not measure the front deck; check the input GLB orientation")
 deck_top_front = pct([v.z for v in front], 0.98)
 lid = [v for v in vs if v.z > deck_top_front + 0.012]
+if not lid:
+    raise ValueError("Could not measure a lid above the deck; use a source mesh with the lid open")
 cy = sum(v.y for v in lid) / len(lid)
 cz = sum(v.z for v in lid) / len(lid)
 syy = sum((v.y - cy) ** 2 for v in lid)
@@ -100,6 +111,8 @@ for bi, l in bins.items():
             pts.append((lo.y + (bi + 0.5) * 0.01, z, tot))
             break
 sw_ = sum(p[2] for p in pts)
+if len(pts) < 2 or sw_ <= 0:
+    raise ValueError("Could not fit the deck plane; use a mesh with a visible keyboard deck")
 my = sum(p[0] * p[2] for p in pts) / sw_
 mz = sum(p[1] * p[2] for p in pts) / sw_
 slope = sum(p[2] * (p[0] - my) * (p[1] - mz) for p in pts) / sum(p[2] * (p[0] - my) ** 2 for p in pts)
@@ -110,7 +123,10 @@ def deck_z(y):
 
 
 # hinge line: where the lid line meets the deck plane (solve cz + t*d.z = deck_z(cy + t*d.y))
-t = (deck_z(cy) - cz) / (d.z - slope * d.y)
+rise = d.z - slope * d.y
+if math.isclose(rise, 0, abs_tol=1e-9):
+    raise ValueError("The lid and deck do not define a hinge; use a source mesh with the lid open")
+t = (deck_z(cy) - cz) / rise
 y_h = cy + t * d.y
 hinge_pt = Vector((0, y_h, deck_z(y_h)))
 L_gen = max((v - hinge_pt).dot(d) for v in lid)
