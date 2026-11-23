@@ -57,12 +57,13 @@ class Leg:
         u = self.s * (p.x - self.P.x)
         v = p.y - self.P.y
         w = p.z - self.P.z
-        r2 = u * u + w * w
-        wp = -math.sqrt(max(r2 - self.d ** 2, 1e-9))
+        planar_depth_sq = u * u + w * w - self.d ** 2
+        wp = -math.sqrt(max(planar_depth_sq, 1e-9))
         a = math.atan2(w, u) - math.atan2(wp, self.d)
         q2 = v * v + wp * wp
         c = (q2 - self.L1 ** 2 - self.L2 ** 2) / (2 * self.L1 * self.L2)
-        ok = -1 <= c <= 1
+        # The HAA pivot-to-leg offset also limits reach, independent of the two links.
+        ok = planar_depth_sq >= 0 and -1 <= c <= 1
         psi = math.copysign(math.acos(max(-1, min(1, c))), self.psi0)
         f2 = psi - self.psi0
         ang_q = math.atan2(wp, v)
