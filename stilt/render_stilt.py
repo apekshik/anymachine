@@ -35,6 +35,11 @@ while i < len(argv):
         views.append(argv[i]); i += 1
 if not views:
     views = ['front', 'left', 'rear', 'top', '3q', '3q_rear', 'cu']
+animation_views = [v for v in views if v in ('walk', 'reach', 'head', 'turntable', 'assembly')]
+if animation_views and not FRAMES:
+    raise SystemExit('Animation views require --frames DIR.')
+if len(animation_views) > 1:
+    raise SystemExit('Choose one animation view per --frames directory to avoid overwriting frames.')
 OUT = os.path.join(HERE, 'renders')
 os.makedirs(OUT, exist_ok=True)
 INFO = json.load(open(os.path.join(HERE, 'stilt_info.json')))
