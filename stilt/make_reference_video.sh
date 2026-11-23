@@ -4,7 +4,8 @@
 set -e
 cd "$(dirname "$0")"
 OUT=renders/stilt_reference_to_model.mp4
-TMP=renders/_tmp; rm -rf $TMP; mkdir -p $TMP
+TMP=$(mktemp -d renders/_tmp.XXXXXX)
+trap 'rm -rf -- "$TMP"' EXIT
 ENC="-r 30 -pix_fmt yuv420p -c:v libx264 -preset medium -crf 15 -an"
 n=0; LIST="$TMP/list.txt"; : > "$LIST"
 seg() { n=$((n+1)); printf -v o "%s/s%02d.mp4" "$TMP" $n; echo "file '$(basename $o)'" >> "$LIST"; }
@@ -42,6 +43,7 @@ for p in front left 3q; do
   still renders/stilt_compare_$p.jpg "$FIT" 2.4
 done
 
-ffmpeg -v error -y -f concat -safe 0 -i "$LIST" -c copy -movflags +faststart $OUT
-rm -rf "$TMP"
-ffprobe -v error -show_entries format=duration,size -of csv=p=0 $OUT
+STAGED="$TMP/reference_to_model.mp4"
+ffmpeg -v error -y -f concat -safe 0 -i "$LIST" -c copy -movflags +faststart "$STAGED"
+ffprobe -v error -show_entries format=duration,size -of csv=p=0 "$STAGED"
+mv -f -- "$STAGED" "$OUT"
