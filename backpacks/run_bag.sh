@@ -6,7 +6,7 @@ FFMPEG_X264=$(uv run --python 3.13 --with imageio-ffmpeg python -I -c "import im
 source /c/Users/apek-anna/Developer/anyscene/pipeline/env.sh
 B=C:/Users/apek-anna/Developer/anymachine/backpacks; S=$B/scripts; O=$B/out/$1; G=C:/Users/apek-anna/Developer/anyscene/builder/blender_gpu.py
 Q=/c/Users/apek-anna/Developer/anyscene/pipeline/gpu_run.sh
-X() { "$@" 2>&1 | grep -E "CHECK|EXPORTED|VERIFIED|RENDERED|Error|Traceback" | cut -c1-400 || true; }
+X() { "$@" 2>&1 | grep -E "CHECK|EXPORTED|MEASURED|VERIFIED|RENDERED|Error|Traceback" | cut -c1-400 || true; }
 X "$BLENDER" -b --python $S/check.py -- --blend $O/$1.blend --out $O/check.json --step 0.05
 X "$BLENDER" -b --python $S/export.py -- --blend $O/$1.blend --glb $O/$1.glb --baked $O/$1_baked.blend
 X "$BLENDER" -b --python $S/verify_glb.py -- $O/$1.glb $O/$1_baked.blend $O/verify_glb.json

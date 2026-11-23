@@ -189,3 +189,34 @@ Schema-level additions:
 ## Spend
 
 About $4.95, logged to `anyscene/generate/spend.jsonl`: 3 GPT Image references, 3 Tripo P2 runs and 3 Meshy v7.1 runs.
+
+### GLB pose coverage report
+
+The verifier compares the evaluated world-space vertex clouds at the sampled
+poses. Its existing `median_mm`, `p99_mm`, and `max_mm` fields are still
+imported-to-source distances. The source cloud includes only the rig's direct
+mesh children in the active view layer, matching the backpack export selection
+rather than including unrelated scene guides. The `reference_to_import_mm` stats
+also look for source points that have no nearby imported point.
+`symmetric_max_mm` is the larger directional maximum. This can detect spatially
+missing pieces without assuming matching mesh names, vertex counts or order.
+It is not a topology test: coincident or sufficiently nearby geometry can mask
+the loss of a piece, and the verifier still samples only selected poses.
+
+The default invocation measures and writes the JSON report without applying a
+distance tolerance. For an opt-in pass/fail check, choose the tolerance for
+your asset and invoke Blender directly:
+
+```sh
+blender -b --disable-autoexec --python-exit-code 1 --python backpacks/scripts/verify_glb.py -- bag.glb bag_baked.blend report.json --max-error-mm 2
+blender -b --disable-autoexec --python-exit-code 1 --python backpacks/tests/test_glb_pose_distance.py
+```
+
+A failed threshold still writes the report before raising an error; comparison
+uses unrounded distances. Empty or non-finite point clouds are reported as
+invalid, and an import without an armature fails even when pose distances
+are zero. The importer excludes Blender-generated bone display geometry.
+The procedural regression uses the verifier’s import and report helpers in
+separate Blender processes and checks the JSON and exit codes for an intact
+GLB, one with an omitted part, and one with no armature. Checking only
+imported vertices can report zero error for a missing part.
